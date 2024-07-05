@@ -1879,6 +1879,76 @@ func TestComputeTrafficSegments(t *testing.T) {
 			},
 			expectErr: false,
 		},
+		{
+			/*
+				This testcase shows there is a gap possible during the traffic switch.
+				After v2 is applied, but v1 is not, traffic segments look like this:
+				+ v1: TrafficSegment(0.0, 0.26)
+				+ v2: TrafficSegment(0.50, 1.0)
+				+ v3: TrafficSegment(0.50, 0.75)
+				+ v4: TrafficSegment(0.75, 1.0)
+
+				The segment between 0.26 and 0.5 is not covered by any traffic segment here.
+			*/
+			actualTrafficWeights: map[types.UID]float64{
+				"v1": 50.0,
+				"v2": 50.0,
+			},
+			ingressSegments: map[types.UID]string{
+				"v1": "TrafficSegment(0.0, 0.26)",
+				"v2": "TrafficSegment(0.26, 0.50)",
+				"v3": "TrafficSegment(0.50, 0.75)",
+				"v4": "TrafficSegment(0.75, 1.0)",
+			},
+			routeGroupSegments: map[types.UID]string{
+				"v1": "",
+				"v2": "",
+			},
+			expected: []types.UID{"v2", "v1"},
+			expectedLowerLimits: map[types.UID]float64{
+				"v2": 0.5,
+				"v1": 0.0,
+			},
+			expectedUpperLimits: map[types.UID]float64{
+				"v2": 1.0,
+				"v1": 0.5,
+			},
+			expectErr: false,
+		},
+		{
+			/*
+				This testcase shows there is a gap possible during the traffic switch.
+				After v2 is applied, but v1 is not, traffic segments look like this:
+				+ v1: TrafficSegment(0.0, 0.33)
+				+ v2: TrafficSegment(0.4, 1.0)
+				+ v3: TrafficSegment(0.67, 1.0)
+
+				The segment between 0.33 and 0.4 is not covered by any traffic segment here.
+			*/
+			actualTrafficWeights: map[types.UID]float64{
+				"v1": 40.0,
+				"v2": 60.0,
+			},
+			ingressSegments: map[types.UID]string{
+				"v1": "TrafficSegment(0.0, 0.33)",
+				"v2": "TrafficSegment(0.33, 0.67)",
+				"v3": "TrafficSegment(0.67, 1.0)",
+			},
+			routeGroupSegments: map[types.UID]string{
+				"v1": "",
+				"v2": "",
+			},
+			expected: []types.UID{"v2", "v1"},
+			expectedLowerLimits: map[types.UID]float64{
+				"v2": 0.4,
+				"v1": 0.0,
+			},
+			expectedUpperLimits: map[types.UID]float64{
+				"v2": 1.0,
+				"v1": 0.4,
+			},
+			expectErr: false,
+		},
 	} {
 		stackContainers := map[types.UID]*StackContainer{}
 		for k, v := range tc.actualTrafficWeights {
